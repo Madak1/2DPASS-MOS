@@ -34,9 +34,9 @@ The first step is to select only the points of the current scan, and then merge 
 
 ## Installation
 
-- Download the original [2DPASS](https://github.com/yanx27/2DPASS) then modify it as described below.
-- The dependencies will be the same as for the original 2DPASS.
-- The tests were run on the [SemanticKITTI](http://www.semantic-kitti.org/index.html) dataset. 
+- Download the original [2DPASS](https://github.com/yanx27/2DPASS) then modify it as described in the adaptation section.
+- The dependencies will be the same as for the original [2DPASS](https://github.com/yanx27/2DPASS#requirements).
+- The models were run on the [SemanticKITTI](http://www.semantic-kitti.org/index.html) dataset. 
 
 ### Data Preparation
 
@@ -72,31 +72,63 @@ As with 2DPASS, you need to download the files from the [SemanticKITTI website](
 
 
 ### MOS adaptation
-- ToDo: Describe the Config changes
 
+- The first step is to set the label mapping correctly, using the file provided by [LMNet](https://github.com/PRBonn/LiDAR-MOS). To do this, insert the file "semantic-kitti-mos.yaml", which can be found in the "adaptation/F1" folder, into the "config/label_mapping" folder within the 2DPASS file structure. 
+- The next step is to specify the path for the new label_mapping config file and set the number of classes and the number of points within the classes. To do this, paste the file "adaptation/F1/2DPASS-semantickitti-mos.yaml" into the 2DPASS "config" folder.
+
+```
+./config/
+├── ...
+├── 2DPASS-semantickitti-mos.yaml
+└── label_mapping/
+    ├── ...
+    └── semantic-kitti-mos.yaml
+```
 
 ## Training
-- ToDo: Original, just different config
+
+To train a 2DPASS-MOS network, you can run the training with:
+
+```shell script
+python main.py --log_dir 2DPASS-MOS_semkitti --config config/2DPASS-semantickitti-mos.yaml --gpu 0
+```
+
+- log_dir: The output path
+- config: The config file path
+- gpu: The index of the GPU to use for traning
 
 
 ## Testing
-- ToDo: Original, just different config
-- ToDo: Describe num_vote
-- ToDo: Describe checkpoint
+
+The test can also be run on a pre-trained model, which can be found in the "models" folder.
+
+To test a 2DPASS-MOS network, you can run the test with:
+
+```shell script
+python main.py --config config/2DPASS-semantickitti-mos.yaml --gpu 0 --test --num_vote 12 --checkpoint <checkpoint path>
+```
+
+- config: The config file path
+- gpu: The index of the GPU to use for testing
+- test: This indicates that testing will be done
+- num_vote: Number of views for the test-time-augmentation. (For more information, visit the [2DPASS](https://github.com/yanx27/2DPASS#testing) website)
+- checkpoint: The path of the model on which the test will run.
 
 ## Evaluation and visualization
-- ToDo: LMNET
-### How to evaluate
-### How to visualize
 
+To visualize and evaluate the results, we used the solution of [LMNet](https://github.com/PRBonn/LiDAR-MOS/tree/main#evaluation-and-visualization).
+On this repository you can find everything you need to analyse the results nicely and clearly documented.
 
 ## Try 2 Frame version (Beta)
 - ToDo: Describe 2F version
 
-## Pretrain models and Results
-- ToDo: Uploade models
+## Results
 - ToDo: Show results
 
 ## License
 This repository is released under HUN-REN SZTAKI License (see LICENSE file for details).
-- ToDo: Add LICENSE file
+
+
+- ToDo: Upload models
+- ToDo: Upload LICENSE file
+- ToDo: Upload adaptation files
