@@ -73,8 +73,8 @@ As with 2DPASS, you need to download the files from the [SemanticKITTI website](
 
 ### MOS adaptation
 
-- The first step is to set the label mapping correctly, using the file provided by [LMNet](https://github.com/PRBonn/LiDAR-MOS). To do this, insert the file "semantic-kitti-mos.yaml", which can be found in the "adaptation/F1" folder, into the "config/label_mapping" folder within the 2DPASS file structure. 
-- The next step is to specify the path for the new label_mapping config file and set the number of classes and the number of points within the classes. To do this, paste the file "adaptation/F1/2DPASS-semantickitti-mos.yaml" into the 2DPASS "config" folder.
+- The first step is to set the label mapping correctly, using the file provided by [LMNet](https://github.com/PRBonn/LiDAR-MOS). To do this, insert the file "semantic-kitti-mos.yaml", which can be found in the "adaptation" folder, into the "config/label_mapping" folder within the 2DPASS file structure. 
+- The next step is to specify the path for the new label_mapping config file and set the number of classes and the number of points within the classes. To do this, paste the file "adaptation/2DPASS-semantickitti-mos.yaml" into the 2DPASS "config" folder.
 
 ```
 ./config/
