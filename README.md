@@ -2,7 +2,7 @@
 
 2DPASS-MOS is a Moving Object Segmentation (MOS) network based on [2DPASS](https://github.com/yanx27/2DPASS). 
 It operates on 3D LiDAR point clouds, but instead of semantic segmentation, the network decomposes the scene into static and dynamic objects using data fusion.
-The network takes advantage of 2D images during training, such as dense color information and fine grained texture, to provide additional information to the ponit cloud. 
+The network takes advantage of 2D images during training, such as dense color information and fine grained texture, to provide additional information to the point cloud. 
 After the traning, the network performs segmentation on the clean LiDAR point clouds, whithout using the images directly.
 
 Using just one scan achieves remarkable results, but this network also provides the possibility to use multiple (sparse) LiDAR point clouds in both training and prediction to extract additional moving information. 
