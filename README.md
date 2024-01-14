@@ -138,7 +138,7 @@ You can find the models with the scores below from this repository.
 |2DPASS-MOS 1F|58.5%|65.6%|
 |2DPASS-MOS 2F|67.6%| - |
 
-- R: Residual number (1 Residual is equal to 2 Frame)
+- R: Residual number (Residual 1 is use 2 Frame)
 - F: Frame number
 
 ## License
