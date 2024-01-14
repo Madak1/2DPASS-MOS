@@ -100,17 +100,22 @@ python main.py --log_dir 2DPASS-MOS_semkitti --config config/2DPASS-semantickitt
 
 ## Testing
 
-The test can also be run on a pre-trained model, which can be found in the "models" folder.
+IMPORTANT: Currently, testing is not working well in case of MOS. It doesn't print the result, but it can be used to extract it and then evaluate it by another method.
+
+TIPP: Change the split of the dataset in the "./config/label_mapping/semantic-kitti-mos.yaml" file to To specify the sequences you want to save.
+
+TIPP: The test can also be run on a pre-trained model, which can be found in the "models" folder.
 
 To test a 2DPASS-MOS network, you can run the test with:
 
 ```shell script
-python main.py --config config/2DPASS-semantickitti-mos.yaml --gpu 0 --test --num_vote 12 --checkpoint <checkpoint path>
+python main.py --config config/2DPASS-semantickitti-mos.yaml --gpu 0 --test --submit_to_server --num_vote 12 --checkpoint <checkpoint path>
 ```
 
 - config: The config file path
 - gpu: The index of the GPU to use for testing
 - test: This indicates that testing will be done
+- submit_to_srever: This indicates that the result will be saved
 - num_vote: Number of views for the test-time-augmentation. (For more information, visit the [2DPASS](https://github.com/yanx27/2DPASS#testing) website)
 - checkpoint: The path of the model on which the test will run.
 
@@ -123,12 +128,18 @@ On this repository you can find everything you need to analyse the results nicel
 - ToDo: Describe 2F version
 
 ## Results
-- ToDo: Show results
+
+You can find the models with the scores below from this repository.
+
+|Model (validation)|mIoU|mIoU (TTA)|
+|:---:|:---:|:---:|
+|LMNet R1|60.5%| - |
+|LMNet R8|67.1%| - |
+|2DPASS-MOS 1F|58.5%|65.6%|
+|2DPASS-MOS 2F|67.6%| - |
+
+- R: Residual number (1 Residual is equal to 2 Frame)
+- F: Frame number
 
 ## License
 This repository is released under HUN-REN SZTAKI License (see LICENSE file for details).
-
-
-- ToDo: Upload models
-- ToDo: Upload LICENSE file
-- ToDo: Upload adaptation files
