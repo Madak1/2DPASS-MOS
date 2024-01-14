@@ -104,7 +104,7 @@ IMPORTANT: Currently, testing is not working well in case of MOS. It doesn't pri
 
 TIPP: Change the split of the dataset in the "./config/label_mapping/semantic-kitti-mos.yaml" file to To specify the sequences you want to save.
 
-TIPP: The test can also be run on a pre-trained model, which can be found in the "models" folder.
+TIPP: The test can also be run on a pre-trained model, which can be found in this [link](https://drive.google.com/file/d/1VhlFOA7pM5ue0rWLJ4DXhIEYtkvBT4zK).
 
 To test a 2DPASS-MOS network, you can run the test with:
 
@@ -129,7 +129,7 @@ On this repository you can find everything you need to analyse the results nicel
 
 ## Results
 
-You can find the models with the scores below from this repository.
+You can find the models with the scores below from this [link](https://drive.google.com/file/d/1VhlFOA7pM5ue0rWLJ4DXhIEYtkvBT4zK).
 
 |Model (validation)|mIoU|mIoU (TTA)|
 |:---:|:---:|:---:|
