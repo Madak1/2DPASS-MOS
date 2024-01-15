@@ -2,10 +2,10 @@
 
 2DPASS-MOS is a Moving Object Segmentation (MOS) network based on [2DPASS](https://github.com/yanx27/2DPASS). 
 It operates on 3D LiDAR point clouds, but instead of semantic segmentation, the network decomposes the scene into static and dynamic objects using data fusion.
-The network takes advantage of 2D images during training, such as dense color information and fine grained texture, to provide additional information to the point cloud. 
-After the traning, the network performs segmentation on the clean LiDAR point clouds, whithout using the images directly.
+The network takes advantage of the features of 2D images during training, such as dense color information and fine grained texture, to provide additional information to the LiDAR scans. 
+During infarance, the network performs segmentation on the clean LiDAR point clouds, whithout using the images directly.
 
-Using just one scan achieves remarkable results, but this network also provides the possibility to use multiple (sparse) LiDAR point clouds in both training and prediction to extract additional moving information. 
+Using just one scan already achieves remarkable results, but this network provides possibility to use multiple (sparse) LiDAR point clouds for both training and infarance to extract additional moving information. 
 To create the multi-scan version of the model, the solution provided by the [4DMOS](https://github.com/PRBonn/4DMOS) was a great help during the implementation.
 
 We want to thank the original authors for their clear implementation and great work, which has greatly helped our project.
@@ -17,7 +17,7 @@ In case of one scan, it works the same as 2DPASS, but instead of semantic segmen
 However, in the case of multiple scans, several internal structural changes were made.
 
 The network first performs a sparse operation, taking only the odd (or even) points of the point cloud.
-After that the network transforms the point clouds into a common point based on the current scan, and finally performs a merge.
+After that the network transforms the point clouds into a common point based on the current scan, then finally performs a merge.
 
 <p align="center">
    <img src="figures/pc-merge.png" width="90%"> 
@@ -102,7 +102,7 @@ python main.py --log_dir 2DPASS-MOS_semkitti --config config/2DPASS-semantickitt
 
 IMPORTANT: Currently, testing is not working well in case of MOS. It doesn't print the result, but it can be used to extract it and then evaluate it by another method.
 
-TIPP: Change the split of the dataset in the "./config/label_mapping/semantic-kitti-mos.yaml" file to To specify the sequences you want to save.
+TIPP: Change the split of the dataset in the "./config/label_mapping/semantic-kitti-mos.yaml" file to To specify the sequences you want to save (The test split should contain the target sequences).
 
 TIPP: The test can also be run on a pre-trained model, which can be found in this [link](https://drive.google.com/file/d/1VhlFOA7pM5ue0rWLJ4DXhIEYtkvBT4zK).
 
