@@ -7,6 +7,11 @@ from torch.utils import data
 from pathlib import Path
 from nuscenes.utils import splits
 
+# Update ------------------------------------------------------------------------------------------
+import torch
+import math
+# -------------------------------------------------------------------------------------------------
+
 REGISTERED_PC_DATASET_CLASSES = {}
 
 
@@ -54,6 +59,17 @@ class SemanticKITTI(data.Dataset):
             split = semkittiyaml['split']['test']
         else:
             raise Exception('Split must be train/val/test')
+               
+# Update ------------------------------------------------------------------------------------------
+        self.poses = np.array([])
+
+        for seq_num in split:
+            root_path = os.path.join("dataset", "SemanticKitti", "dataset", "sequences")
+            seq_str = "{0:02d}".format(int(seq_num))
+            seq_path = os.path.join(root_path, seq_str)
+            act_poses = self.read_poses(seq_path)
+            self.poses = (act_poses if len(self.poses) == 0 else np.append(self.poses, act_poses, axis=0))
+# -------------------------------------------------------------------------------------------------
 
         self.im_idx = []
         self.proj_matrix = {}
@@ -95,34 +111,130 @@ class SemanticKITTI(data.Dataset):
 
         return calib_out
 
+# Update ------------------------------------------------------------------------------------------
+    # Load ground truth poses from file.
+    #  - pose_path: Complete filename for the pose file
+    def load_poses(self, pose_path):
+        all_poses = []
+        try:
+            with open(pose_path, "r") as f:
+                lines = f.readlines()
+                # Iterate the file line by line
+                for line in lines:
+                    act_poses = np.fromstring(line, dtype=float, sep=" ")
+                    if len(act_poses) == 12:
+                        act_poses = act_poses.reshape(3, 4)
+                        act_poses = np.vstack((act_poses, [0, 0, 0, 1]))
+                    elif len(act_poses) == 16:
+                        act_poses = act_poses.reshape(4, 4)
+                    all_poses.append(act_poses)
+        except FileNotFoundError:
+            print("Ground truth poses are not avaialble.")
+        # Return a numpy array of size nx4x4
+        #  - n: poses
+        #  - 4x4: transformation matrices
+        return np.array(all_poses)
+
+    # Load calibrations from file.
+    #  - calib_path: Complete filename for the calib file
+    def load_calib(self, calib_path):
+        T_cam_velo = []
+        try:
+            with open(calib_path, "r") as f:
+                lines = f.readlines()
+                for line in lines:
+                    if "Tr:" in line:
+                        line = line.replace("Tr:", "")
+                        T_cam_velo = np.fromstring(line, dtype=float, sep=" ")
+                        T_cam_velo = T_cam_velo.reshape(3, 4)
+                        T_cam_velo = np.vstack((T_cam_velo, [0, 0, 0, 1]))
+        except FileNotFoundError:
+            print("Calibrations are not avaialble.")
+        return np.array(T_cam_velo)
+
+    def read_poses(self, path_to_seq):
+        pose_file = os.path.join(path_to_seq, "poses.txt")
+        calib_file = os.path.join(path_to_seq, "calib.txt")
+        poses = np.array(self.load_poses(pose_file))
+        inv_frame0 = np.linalg.inv(poses[0])
+
+        # load calibrations
+        T_cam_velo = self.load_calib(calib_file)
+        T_cam_velo = np.asarray(T_cam_velo).reshape((4, 4))
+        T_velo_cam = np.linalg.inv(T_cam_velo)
+
+        # convert kitti poses from camera coord to LiDAR coord
+        new_poses = []
+        for pose in poses:
+            new_poses.append(T_velo_cam.dot(inv_frame0).dot(pose).dot(T_cam_velo))
+        poses = np.array(new_poses)
+        return poses
+
+    def transform_point_cloud(self, past_point_clouds, from_pose, to_pose):
+        transformation = torch.Tensor(np.linalg.inv(to_pose) @ from_pose)
+        NP = past_point_clouds.shape[0]
+        xyz1 = torch.hstack((past_point_clouds, torch.ones(NP, 1))).T
+        past_point_clouds = (transformation @ xyz1).T[:, :3]
+        return past_point_clouds
+# -------------------------------------------------------------------------------------------------
+
     def __getitem__(self, index):
-        raw_data = np.fromfile(self.im_idx[index], dtype=np.float32).reshape((-1, 4))
-        origin_len = len(raw_data)
-        points = raw_data[:, :3]
+# Update ------------------------------------------------------------------------------------------
+        frame_num = 2
+
+        all_points = np.array([])
+        all_raw_data = np.array([])
+
+        for frame_idx in range(frame_num):
+            frame_idx = index-math.floor(frame_num/2)+frame_idx
+            if frame_idx < 0 or frame_idx >= len(self.poses): continue
+            raw_data = np.fromfile(self.im_idx[frame_idx], dtype=np.float32).reshape((-1, 4))
+            raw_data = raw_data[::2] # ODD: [::2] EVEN: [1::2]
+            all_raw_data = (raw_data if len(all_raw_data) == 0 else np.append(all_raw_data, raw_data, axis=0))
+            raw_data = torch.tensor(raw_data)
+            points = raw_data[:,:3]
+            from_pose = self.poses[frame_idx]
+            to_pose = self.poses[index]
+            t_points = self.transform_point_cloud(points, from_pose, to_pose)
+            all_points = (t_points if len(all_points) == 0 else np.append(all_points, t_points, axis=0))
+        
+        origin_len = len(all_points)
 
         if self.imageset == 'test':
-            annotated_data = np.expand_dims(np.zeros_like(raw_data[:, 0], dtype=int), axis=1)
-            instance_label = np.expand_dims(np.zeros_like(raw_data[:, 0], dtype=int), axis=1)
+            all_annotated_data = np.expand_dims(np.zeros_like(all_raw_data[:, 0], dtype=int), axis=1)
+            all_instance_label = np.expand_dims(np.zeros_like(all_raw_data[:, 0], dtype=int), axis=1)
         else:
-            annotated_data = np.fromfile(self.im_idx[index].replace('velodyne', 'labels')[:-3] + 'label',
-                                         dtype=np.uint32).reshape((-1, 1))
-            instance_label = annotated_data >> 16
-            annotated_data = annotated_data & 0xFFFF  # delete high 16 digits binary
-            annotated_data = np.vectorize(self.learning_map.__getitem__)(annotated_data)
+            all_annotated_data = np.array([])
+            all_instance_label = np.array([])
+            for label_idx in range(frame_num):
+                label_idx = index-math.floor(frame_num/2)+label_idx
+                if label_idx < 0 or label_idx >= len(self.poses): continue
 
-            if self.config['dataset_params']['ignore_label'] != 0:
-                annotated_data -= 1
-                annotated_data[annotated_data == -1] = self.config['dataset_params']['ignore_label']
+                annotated_data = np.fromfile(self.im_idx[label_idx].replace('velodyne', 'labels')[:-3] + 'label', 
+                                             dtype=np.uint32).reshape((-1, 1))
+                annotated_data = annotated_data[::2]
+                instance_label = annotated_data >> 16
+                annotated_data = annotated_data & 0xFFFF  # delete high 16 digits binary
+                annotated_data = np.vectorize(self.learning_map.__getitem__)(annotated_data)
+                if self.config['dataset_params']['ignore_label'] != 0:
+                    annotated_data -= 1
+                    annotated_data[annotated_data == -1] = self.config['dataset_params']['ignore_label']
+
+                all_annotated_data = (annotated_data if len(all_annotated_data) == 0 else np.concatenate((all_annotated_data, annotated_data)))
+                all_instance_label = (instance_label if len(all_instance_label) == 0 else np.concatenate((all_instance_label, instance_label)))
+# -------------------------------------------------------------------------------------------------
 
         image_file = self.im_idx[index].replace('velodyne', 'image_2').replace('.bin', '.png')
         image = Image.open(image_file)
         proj_matrix = self.proj_matrix[int(self.im_idx[index][-22:-20])]
 
+# Update ------------------------------------------------------------------------------------------
         data_dict = {}
-        data_dict['xyz'] = points
-        data_dict['labels'] = annotated_data.astype(np.uint8)
-        data_dict['instance_label'] = instance_label
-        data_dict['signal'] = raw_data[:, 3:4]
+        data_dict['xyz'] = np.array(all_points)
+        data_dict['labels'] = all_annotated_data.astype(np.uint8)
+        data_dict['instance_label'] = all_instance_label
+        data_dict['signal'] = all_raw_data[:, 3:4]
+# -------------------------------------------------------------------------------------------------
         data_dict['origin_len'] = origin_len
         data_dict['img'] = image
         data_dict['proj_matrix'] = proj_matrix
