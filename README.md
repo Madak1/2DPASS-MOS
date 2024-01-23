@@ -149,6 +149,7 @@ python main.py --log_dir 2DPASS-MOS_semkitti --config config/2DPASS-semantickitt
 ```shell script
 python main.py --config config/2DPASS-semantickitti-mos.yaml --gpu 0 --test --submit_to_server --num_vote 12 --checkpoint <checkpoint path> --frame_num 2 --sparse_odd
 ```
+To evaluat the result, need to run in odd and even mode, then the 2 prediction need to merge together. This repo contains an example version of a merge method.
 
 ## Results
 
