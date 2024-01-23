@@ -6,8 +6,7 @@ import os
 
 # =[ Functions ]=========================================================================
 
-# ToDo: Create a split for in case just one seq is needed
-def get_split(split_type):
+def get_split(split_type, target_idx):
     if split_type == 'train':
         split = [0,1,2,3,4,5,6,7,9,10]
     elif split_type == 'trainval':
@@ -16,8 +15,10 @@ def get_split(split_type):
         split = [8]
     elif split_type == 'test':
         split = [11,12,13,14,15,16,17,18,19,20,21]
+    elif split_type == 'target':
+        split = [target_idx]
     else:
-        raise Exception('Split must be train/val/test')
+        raise Exception('Split must be train/val/test/trainval/target')
     return split
 
 def file_paths(directory):
@@ -97,35 +98,34 @@ def reunion(arr1,arr2):
     print("Done")
     return all_ret
 
-# ToDo: Create folder if the path doesn't exist
 def save_target(target_frame_pred, split):
     print("Saving Results...")
     for i, seq in enumerate(split):
         for i, pred in enumerate(target_frame_pred[i]):
-            pred.tofile(os.path.join(
-                "output", 
-                "sequences", 
-                str(seq).zfill(2), 
-                "predictions", 
-                str(i).zfill(6)+".label"
-            ))
+            directory = os.path.join("output", "sequences", str(seq).zfill(2), "predictions")
+            if not os.path.exists(directory):
+                os.makedirs(directory)
+            pred.tofile(os.path.join(directory, str(i).zfill(6)+".label"))
     print("Done")
 
 # =[ Settings ]==========================================================================
 
-split_type = "val"  # train[0-7 & 9-10], trainval[0-10], val[8], test[11-21]
+# Set target sequences
+split_type = "val"  # train[0-7 & 9-10], trainval[0-10], val[8], test[11-21], target[sequence_idx]
+sequence_idx = 0    # optional (if split_type = "target")
 
 # Set the paths
 gt_path = os.path.join("input", "labels", "sequences")
 pred_path = os.path.join("input", "predictions", "sequences")
 
+# Set the merge type
 merge_size = 2  # How many frame was merged
 target_idx = 1  # Which was the original frame
 
 # =[ Steps ]=============================================================================
 
 # Get the target sequences
-split = get_split(split_type)
+split = get_split(split_type, sequence_idx)
 
 # output[i][j] -> i = seq[0-split.size], j = file
 # Example: If split_type="train" then gt_paths[0][3] is the 3th label path from seq 11
