@@ -59,16 +59,18 @@ class SemanticKITTI(data.Dataset):
             split = semkittiyaml['split']['test']
         else:
             raise Exception('Split must be train/val/test')
-               
-# Update ------------------------------------------------------------------------------------------
-        self.poses = np.array([])
 
-        for seq_num in split:
-            root_path = os.path.join("dataset", "SemanticKitti", "dataset", "sequences")
-            seq_str = "{0:02d}".format(int(seq_num))
-            seq_path = os.path.join(root_path, seq_str)
-            act_poses = self.read_poses(seq_path)
-            self.poses = (act_poses if len(self.poses) == 0 else np.append(self.poses, act_poses, axis=0))
+# Update ------------------------------------------------------------------------------------------
+        if self.config["frame_num"] > 1:
+
+            self.poses = np.array([])
+
+            for seq_num in split:
+                root_path = os.path.join("dataset", "SemanticKitti", "dataset", "sequences")
+                seq_str = "{0:02d}".format(int(seq_num))
+                seq_path = os.path.join(root_path, seq_str)
+                act_poses = self.read_poses(seq_path)
+                self.poses = (act_poses if len(self.poses) == 0 else np.append(self.poses, act_poses, axis=0))
 # -------------------------------------------------------------------------------------------------
 
         self.im_idx = []
@@ -176,12 +178,43 @@ class SemanticKITTI(data.Dataset):
         xyz1 = torch.hstack((past_point_clouds, torch.ones(NP, 1))).T
         past_point_clouds = (transformation @ xyz1).T[:, :3]
         return past_point_clouds
-# -------------------------------------------------------------------------------------------------
 
-    def __getitem__(self, index):
-# Update ------------------------------------------------------------------------------------------
-        frame_num = 2
+    def one_frame(self, index):
+        raw_data = np.fromfile(self.im_idx[index], dtype=np.float32).reshape((-1, 4))
+        origin_len = len(raw_data)
+        points = raw_data[:, :3]
 
+        if self.imageset == 'test':
+            annotated_data = np.expand_dims(np.zeros_like(raw_data[:, 0], dtype=int), axis=1)
+            instance_label = np.expand_dims(np.zeros_like(raw_data[:, 0], dtype=int), axis=1)
+        else:
+            annotated_data = np.fromfile(self.im_idx[index].replace('velodyne', 'labels')[:-3] + 'label',
+                                         dtype=np.uint32).reshape((-1, 1))
+            instance_label = annotated_data >> 16
+            annotated_data = annotated_data & 0xFFFF  # delete high 16 digits binary
+            annotated_data = np.vectorize(self.learning_map.__getitem__)(annotated_data)
+
+            if self.config['dataset_params']['ignore_label'] != 0:
+                annotated_data -= 1
+                annotated_data[annotated_data == -1] = self.config['dataset_params']['ignore_label']
+
+        image_file = self.im_idx[index].replace('velodyne', 'image_2').replace('.bin', '.png')
+        image = Image.open(image_file)
+        proj_matrix = self.proj_matrix[int(self.im_idx[index][-22:-20])]
+
+        data_dict = {}
+        data_dict['xyz'] = points
+        data_dict['labels'] = annotated_data.astype(np.uint8)
+        data_dict['instance_label'] = instance_label
+        data_dict['signal'] = raw_data[:, 3:4]
+        data_dict['origin_len'] = origin_len
+        data_dict['img'] = image
+        data_dict['proj_matrix'] = proj_matrix
+
+        return data_dict
+    
+    def multiple_frame(self, index):
+        frame_num = self.config["frame_num"]
         all_points = np.array([])
         all_raw_data = np.array([])
 
@@ -189,7 +222,8 @@ class SemanticKITTI(data.Dataset):
             frame_idx = index-math.floor(frame_num/2)+frame_idx
             if frame_idx < 0 or frame_idx >= len(self.poses): continue
             raw_data = np.fromfile(self.im_idx[frame_idx], dtype=np.float32).reshape((-1, 4))
-            raw_data = raw_data[::2] # ODD: [::2] EVEN: [1::2]
+            if self.config["sparse_odd"]: raw_data = raw_data[::2]
+            else: raw_data = raw_data[1::2]
             all_raw_data = (raw_data if len(all_raw_data) == 0 else np.append(all_raw_data, raw_data, axis=0))
             raw_data = torch.tensor(raw_data)
             points = raw_data[:,:3]
@@ -212,7 +246,8 @@ class SemanticKITTI(data.Dataset):
 
                 annotated_data = np.fromfile(self.im_idx[label_idx].replace('velodyne', 'labels')[:-3] + 'label', 
                                              dtype=np.uint32).reshape((-1, 1))
-                annotated_data = annotated_data[::2]
+                if self.config["sparse_odd"]: annotated_data = annotated_data[::2]
+                else: annotated_data = annotated_data[1::2]
                 instance_label = annotated_data >> 16
                 annotated_data = annotated_data & 0xFFFF  # delete high 16 digits binary
                 annotated_data = np.vectorize(self.learning_map.__getitem__)(annotated_data)
@@ -222,25 +257,28 @@ class SemanticKITTI(data.Dataset):
 
                 all_annotated_data = (annotated_data if len(all_annotated_data) == 0 else np.concatenate((all_annotated_data, annotated_data)))
                 all_instance_label = (instance_label if len(all_instance_label) == 0 else np.concatenate((all_instance_label, instance_label)))
-# -------------------------------------------------------------------------------------------------
 
         image_file = self.im_idx[index].replace('velodyne', 'image_2').replace('.bin', '.png')
         image = Image.open(image_file)
         proj_matrix = self.proj_matrix[int(self.im_idx[index][-22:-20])]
 
-# Update ------------------------------------------------------------------------------------------
         data_dict = {}
         data_dict['xyz'] = np.array(all_points)
         data_dict['labels'] = all_annotated_data.astype(np.uint8)
         data_dict['instance_label'] = all_instance_label
         data_dict['signal'] = all_raw_data[:, 3:4]
-# -------------------------------------------------------------------------------------------------
         data_dict['origin_len'] = origin_len
         data_dict['img'] = image
         data_dict['proj_matrix'] = proj_matrix
 
+        return data_dict
+
+    def __getitem__(self, index):
+        if self.config["frame_num"] > 1: data_dict = self.multiple_frame(index)
+        else: data_dict = self.one_frame(index)
         return data_dict, self.im_idx[index]
 
+# -------------------------------------------------------------------------------------------------
 
 @register_dataset
 class nuScenes(data.Dataset):
