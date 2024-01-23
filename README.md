@@ -3,7 +3,7 @@
 2DPASS-MOS is a Moving Object Segmentation (MOS) network based on [2DPASS](https://github.com/yanx27/2DPASS). 
 It operates on 3D LiDAR point clouds, but instead of semantic segmentation, the network decomposes the scene into static and dynamic objects using data fusion.
 The network takes advantage of the features of 2D images during training, such as dense color information and fine grained texture, to provide additional information to the LiDAR scans. 
-During infarance, the network performs segmentation on the clean LiDAR point clouds, whithout using the images directly.
+During inference, the network performs segmentation on the clean LiDAR point clouds, whithout using the images directly.
 
 Using just one scan already achieves remarkable results, but this network provides possibility to use multiple (sparse) LiDAR point clouds for both training and infarance to extract additional moving information. 
 To create the multi-scan version of the model, the solution provided by the [4DMOS](https://github.com/PRBonn/4DMOS) was a great help during the implementation.
@@ -116,7 +116,7 @@ python main.py --config config/2DPASS-semantickitti-mos.yaml --gpu 0 --test --su
 - gpu: The index of the GPU to use for testing
 - test: This indicates that testing will be done
 - submit_to_srever: This indicates that the result will be saved
-- num_vote: Number of views for the test-time-augmentation. (For more information, visit the [2DPASS](https://github.com/yanx27/2DPASS#testing) website)
+- num_vote: Number of views for the test-time-augmentation (TTA). For more information, visit the [2DPASS](https://github.com/yanx27/2DPASS#testing) website
 - checkpoint: The path of the model on which the test will run.
 
 ## Evaluation and visualization
@@ -125,7 +125,30 @@ To visualize and evaluate the results, we used the solution of [LMNet](https://g
 On this repository you can find everything you need to analyse the results nicely and clearly documented.
 
 ## Try 2 Frame version (Beta)
-- ToDo: Describe 2F version
+
+To test it, you need to overwrite 2 more files. The first is main.py which allows you to specify additional arguments. The second file is "./dataloader/pc_dataset.py", which handles the use of multiple frames. Both 2 files can be found in the adaptation folder.
+
+```
+./
+├── ...
+├── main.py
+└── dataloader/
+    ├── ...
+    └── pc_dataset.py
+```
+
+To train or test a 2DPASS-MOS network with multiple frame, you can run the training with 2 additional argument:
+
+- frame_num: How many frame will use (if 1 then use the original one scan version)
+- sparse_odd: In case of multiple frame, can select sparse mode (T - Odd, F - Even)
+
+```shell script
+python main.py --log_dir 2DPASS-MOS_semkitti --config config/2DPASS-semantickitti-mos.yaml --gpu 0 --frame_num 2 --sparse_odd
+```
+
+```shell script
+python main.py --config config/2DPASS-semantickitti-mos.yaml --gpu 0 --test --submit_to_server --num_vote 12 --checkpoint <checkpoint path> --frame_num 2 --sparse_odd
+```
 
 ## Results
 
@@ -134,12 +157,14 @@ You can find the models with the scores below from this [link](https://drive.goo
 |Model (validation)|mIoU|mIoU (TTA)|
 |:---:|:---:|:---:|
 |LMNet R1|60.5%| - |
-|LMNet R8|67.1%| - |
+|LMNet R8 S|67.1%| - |
 |2DPASS-MOS 1F|58.5%|65.6%|
 |2DPASS-MOS 2F|67.6%| - |
+|2DPASS-MOS 2F S|69.1%| - |
 
-- R: Residual number (Residual 1 is use 2 Frame)
+- R: Residual number (Example: Residual 1 models are use 2 Frame)
 - F: Frame number
+- S: Use aditional semantic segmentation
 
 ## License
 This repository is released under HUN-REN SZTAKI License (see LICENSE file for details).
