@@ -64,7 +64,7 @@ As with 2DPASS, you need to download the files from the [SemanticKITTI website](
             |   |   ├── 000001.png
             |   |   └── ...
             |   calib.txt
-            |   poses.txt
+            |   poses.txt # for multiple frame
             ├── 08/ # for validation
             ├── 11/ # 11-21 for testing
             └── 21/
