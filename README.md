@@ -1,29 +1,29 @@
 # 2DPASS-MOS
 
-2DPASS-MOS is a Moving Object Segmentation (MOS) network based on [2DPASS](https://github.com/yanx27/2DPASS). 
-It operates on 3D LiDAR point clouds, but instead of semantic segmentation, the network decomposes the scene into static and dynamic objects using data fusion.
-The network takes advantage of the features of 2D images during training, such as dense color information and fine grained texture, to provide additional information to the LiDAR scans. 
-During inference, the network performs segmentation on the clean LiDAR point clouds, whithout using the images directly.
+2DPASS-MOS is a Moving Object Segmentation (MOS) method based on [2DPASS](https://github.com/yanx27/2DPASS). 
+It operates on 3D LiDAR point clouds, but instead of semantic segmentation, this method decomposes the scene into static and dynamic objects using data fusion.
+The network takes advantage of the features of 2D images during training, such as dense color information and fine-grained texture, to provide additional information to the LiDAR scans. 
+During inference, the network performs segmentation on the clean LiDAR point clouds, without using the images directly.
 
-Using just one scan already achieves remarkable results, but this network provides possibility to use multiple (sparse) LiDAR point clouds for both training and infarance to extract additional moving information. 
-To create the multi-scan version of the model, the solution provided by the [4DMOS](https://github.com/PRBonn/4DMOS) was a great help during the implementation.
+Using just one scan already achieves remarkable results, but this method provides the possibility to use multiple (sparse) LiDAR point clouds for both training and inference to extract additional moving information. 
+To create the multi-scan version of the network, the solution provided by the [4DMOS](https://github.com/PRBonn/4DMOS) was a great help during the implementation.
 
 We want to thank the original authors for their clear implementation and great work, which has greatly helped our project.
 
 
 ## How it works
 
-In case of one scan, it works the same as 2DPASS, but instead of semantic segmentation, the network performs moving object segmentation.
+In case of one scan, it works the same as 2DPASS, but instead of semantic segmentation, this method performs moving object segmentation.
 However, in the case of multiple scans, several internal structural changes were made.
 
 The network first performs a sparse operation, taking only the odd (or even) points of the point cloud.
-After that the network transforms the point clouds into a common point based on the current scan, then finally performs a merge.
+After that, the network transforms the point clouds into a common point based on the current scan, then finally performs a merge.
 
 <p align="center">
    <img src="figures/pc-merge.png" width="90%"> 
 </p>
 
-The output of the network in this form does not match the expectations of the SemanticKITTI Banchmarks, so it requires post-processing to evaluate the results.
+The output of the network in this form does not match the expectations of the SemanticKITTI Benchmarks, so it requires post-processing to evaluate the results.
 Predictions must be evaluated for both even and odd sparse models, and then the results of these models must be combined.
 The first step is to select only the points of the current scan, and then merge the even and odd results.
 
@@ -50,7 +50,7 @@ As with 2DPASS, you need to download the files from the [SemanticKITTI website](
     └── dataset/
         ├── ...
         └── sequences/
-            ├── 00/ # 00-10 for traning       
+            ├── 00/ # 00-10 for training       
             │   ├── velodyne/	
             |   |	├── 000000.bin
             |   |	├── 000001.bin
@@ -64,7 +64,7 @@ As with 2DPASS, you need to download the files from the [SemanticKITTI website](
             |   |   ├── 000001.png
             |   |   └── ...
             |   calib.txt
-            |   poses.txt # for multiple frame
+            |   poses.txt # for multiple frames
             ├── 08/ # for validation
             ├── 11/ # 11-21 for testing
             └── 21/
@@ -95,7 +95,7 @@ python main.py --log_dir 2DPASS-MOS_semkitti --config config/2DPASS-semantickitt
 
 - log_dir: The output path
 - config: The config file path
-- gpu: The index of the GPU to use for traning
+- gpu: The index of the GPU to use for training
 
 
 ## Testing
@@ -124,7 +124,7 @@ python main.py --config config/2DPASS-semantickitti-mos.yaml --gpu 0 --test --su
 To visualize and evaluate the results, we used the solution of [LMNet](https://github.com/PRBonn/LiDAR-MOS/tree/main#evaluation-and-visualization).
 On this repository you can find everything you need to analyse the results nicely and clearly documented.
 
-## Try 2 Frame version (Beta)
+## Try 2 Frames version (Beta)
 
 To test it, you need to overwrite 2 more files. The first is main.py which allows you to specify additional arguments. The second file is "./dataloader/pc_dataset.py", which handles the use of multiple frames. Both 2 files can be found in the adaptation folder.
 
@@ -137,10 +137,10 @@ To test it, you need to overwrite 2 more files. The first is main.py which allow
     └── pc_dataset.py
 ```
 
-To train or test a 2DPASS-MOS network with multiple frame, you can run the training with 2 additional argument:
+To train or test a 2DPASS-MOS network with multiple frames, you can run the training with 2 additional arguments:
 
-- frame_num: How many frame will use (if 1 then use the original one scan version)
-- sparse_odd: In case of multiple frame, can select sparse mode (T - Odd, F - Even)
+- frame_num: How many frames will you use (if 1 then use the original one scan version)
+- sparse_odd: In case of multiple frames, can select sparse mode (T - Odd, F - Even)
 
 ```shell script
 python main.py --log_dir 2DPASS-MOS_semkitti --config config/2DPASS-semantickitti-mos.yaml --gpu 0 --frame_num 2 --sparse_odd
@@ -149,7 +149,9 @@ python main.py --log_dir 2DPASS-MOS_semkitti --config config/2DPASS-semantickitt
 ```shell script
 python main.py --config config/2DPASS-semantickitti-mos.yaml --gpu 0 --test --submit_to_server --num_vote 12 --checkpoint <checkpoint path> --frame_num 2 --sparse_odd
 ```
-To evaluat the result, need to run in odd and even mode, then the 2 prediction need to merge together. This repo contains an example version of a merge method.
+To evaluat the result, it needs to run in odd and even modes, and then the 2 predictions need to merge together. This repo contains an example version of a merge method.
+
+This repo also contain a matlab script, which can add additional semantic segmentation information to the predictions. 
 
 ## Results
 
@@ -163,9 +165,9 @@ You can find the models with the scores below from this [link](https://drive.goo
 |2DPASS-MOS 2F|67.6%| - |
 |2DPASS-MOS 2F S|69.1%| - |
 
-- R: Residual number (Example: Residual 1 models are use 2 Frame)
+- R: Residual number (Example: Residual 1 models are use 2 Frames)
 - F: Frame number
 - S: Use aditional semantic segmentation
 
 ## License
-This repository is released under HUN-REN SZTAKI License (see LICENSE file for details).
+This repository is released under MIT License (see LICENSE file for details).
