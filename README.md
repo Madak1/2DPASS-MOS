@@ -151,7 +151,7 @@ python main.py --config config/2DPASS-semantickitti-mos.yaml --gpu 0 --test --su
 ```
 To evaluat the result, it needs to run in odd and even modes, and then the 2 predictions need to merge together. This repo contains an example version of a merge method.
 
-This repo also contain a matlab script, which can add additional semantic segmentation information to the predictions. 
+This repo also contain a matlab script (inside the "add_semantic" folder), which can add additional semantic segmentation information to the predictions. 
 
 ## Results
 
