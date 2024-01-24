@@ -155,6 +155,7 @@ This repo also contain a matlab script (inside the "add_semantic" folder), which
 
 ## Results
 
+You can find the best results of our method in the "results" folder.<br/>
 You can find the models with the scores below from this [link](https://drive.google.com/file/d/1VhlFOA7pM5ue0rWLJ4DXhIEYtkvBT4zK).
 
 |Model (validation)|mIoU|mIoU (TTA)|
