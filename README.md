@@ -160,7 +160,7 @@ You can find the models with the scores below from this [link](https://drive.goo
 
 |Model (validation)|mIoU|mIoU (TTA)|
 |:---:|:---:|:---:|
-|LMNet R1|60.5%| - |
+|LMNet R1|59.9%| - |
 |LMNet R8 S|67.1%| - |
 |2DPASS-MOS 1F|58.5%|65.6%|
 |2DPASS-MOS 2F|67.6%| - |
