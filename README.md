@@ -10,6 +10,10 @@ To create the multi-scan version of the network, the solution provided by the [4
 
 We want to thank the original authors for their clear implementation and great work, which has greatly helped our project.
 
+<p align="center">
+   <img src="images/1f_comp-crop" width="90%"> 
+</p>
+
 
 ## How it works
 
@@ -20,7 +24,7 @@ The network first performs a sparse operation, taking only the odd (or even) poi
 After that, the network transforms the point clouds into a common point based on the current scan, then finally performs a merge.
 
 <p align="center">
-   <img src="figures/pc-merge.png" width="90%"> 
+   <img src="images/pc-merge.png" width="90%"> 
 </p>
 
 The output of the network in this form does not match the expectations of the SemanticKITTI Benchmarks, so it requires post-processing to evaluate the results.
@@ -28,7 +32,7 @@ Predictions must be evaluated for both even and odd sparse models, and then the 
 The first step is to select only the points of the current scan, and then merge the even and odd results.
 
 <p align="center">
-   <img src="figures/pred-merge.png" width="90%"> 
+   <img src="images/pred-merge.png" width="90%"> 
 </p>
 
 
