@@ -10,8 +10,8 @@ To create the multi-scan version of the network, the solution provided by the [4
 
 We want to thank the original authors for their clear implementation and great work, which has greatly helped our project.
 
-<p align="center">
-   <img src="images/1f_comp-crop" width="90%"> 
+<p align="left">
+   <img src="images/1f_comp-crop.gif" width="40%"> 
 </p>
 
 
