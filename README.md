@@ -128,9 +128,9 @@ python main.py --config config/2DPASS-semantickitti-mos.yaml --gpu 0 --test --su
 To visualize and evaluate the results, we used the solution of [LMNet](https://github.com/PRBonn/LiDAR-MOS/tree/main#evaluation-and-visualization).
 On this repository you can find everything you need to analyse the results nicely and clearly documented.
 
-## Try 2 Frames version (Beta)
+## Try 2 Frames version
 
-To test it, you need to overwrite 2 more files. The first is main.py which allows you to specify additional arguments. The second file is "./dataloader/pc_dataset.py", which handles the use of multiple frames. Both 2 files can be found in the adaptation folder.
+To try it, you need to overwrite 2 more files. The first is main.py which allows you to specify additional arguments. The second file is "./dataloader/pc_dataset.py", which handles the use of multiple frames. Both 2 files can be found in the adaptation folder.
 
 ```
 ./
@@ -140,39 +140,91 @@ To test it, you need to overwrite 2 more files. The first is main.py which allow
     ├── ...
     └── pc_dataset.py
 ```
+#### On-The-Run Mearge
 
-To train or test a 2DPASS-MOS network with multiple frames, you can run the training with 2 additional arguments:
+To train or test a 2DPASS-MOS network with multiple frames, you can run with 2 additional arguments:
 
-- frame_num: How many frames will you use (if 1 then use the original one scan version)
-- sparse_odd: In case of multiple frames, can select sparse mode (T - Odd, F - Even)
+- frame_num: How many frames will you use (if one, then use the original one scan version)
+- sparse (optional): In case of multiple frames, can select sparse (undersampling) mode. <br/> _Example: If sparse=2/3, then pointcloud [p0, p1, p2, p3, p4, p5, p6] will be [p1, p4]_
+
+Run traning example
 
 ```shell script
-python main.py --log_dir 2DPASS-MOS_semkitti --config config/2DPASS-semantickitti-mos.yaml --gpu 0 --frame_num 2 --sparse_odd
+python main.py --log_dir 2DPASS-MOS_semkitti --config config/2DPASS-semantickitti-mos.yaml --gpu 0 --frame_num 2 --sparse 1/2
 ```
+Run test example (It needs to run in odd (1/2) and even (2/2) modes)
 
 ```shell script
-python main.py --config config/2DPASS-semantickitti-mos.yaml --gpu 0 --test --submit_to_server --num_vote 1 --checkpoint <checkpoint path> --frame_num 2 --sparse_odd
+python main.py --config config/2DPASS-semantickitti-mos.yaml --gpu 0 --test --submit_to_server --num_vote 1 --checkpoint <checkpoint path> --frame_num 2 --sparse 1/2
+python main.py --config config/2DPASS-semantickitti-mos.yaml --gpu 0 --test --submit_to_server --num_vote 1 --checkpoint <checkpoint path> --frame_num 2 --sparse 2/2
 ```
-To evaluat the result, it needs to run in odd and even modes, and then the 2 predictions need to merge together. This repo contains an example version of a merge method.
+To evaluat, the 2 predictions need to be cleared and merge together. This repo contains an example version of the clearing method.
 
 This repo also contain a matlab script (inside the "add_semantic" folder), which can uses additional semantic segmentation information to create object instances and make object level decisions for the predictions.
 
+#### Pre Mearge
+
+To train or test a 2DPASS-MOS network with multiple frames, you can run with the same as the one frame version, just have to create a dataset, which contain premerge labels and velodyne files. This repo contain a basic solution for that. In the premerge_dataset folder there are a script which generate a dataset (validation only) with merged files.
+
+To generate merged dataset just copy some file as follow:
+
+```
+./
+├── ...
+└── premerge_dataset/
+    ├── ...
+    └── input/
+        ├── calib.txt
+        ├── image_2
+        ├── labels
+        ├── poses.txt
+        └── velodyne
+```
+Then just run the script, and the genereted dataset will be in the output folder
+
+```shell script
+python gen_2frame_val_dataset.py
+```
+With the created dataset, you can run the test with 12 TTA
+
+```shell script
+python main.py --config config/2DPASS-semantickitti-mos.yaml --gpu 0 --test --submit_to_server --num_vote 12 --checkpoint <checkpoint path>
+```
+To evaluat, need to clear the predictions. This repo contains an example for that.
+
 ## Results
 
-You can find the best results of our method in the "results" folder.<br/>
-You can find the models with the scores below from this [link](https://drive.google.com/file/d/1VhlFOA7pM5ue0rWLJ4DXhIEYtkvBT4zK).
+The predictions of our method can be find in the "results" folder.
 
-|Model (validation)|mIoU|mIoU (TTA)|
+#### Comparison
+
+This table compare the result of our proposed method with the competitors on the SemanticKITTI validation dataset.
+
+|Method|Frames|mIoU (validation)|
 |:---:|:---:|:---:|
-|LMNet R1|59.9%| - |
-|LMNet R8 S|67.1%| - |
-|2DPASS-MOS 1F|58.5%|65.6%|
-|2DPASS-MOS 2F|67.6%| - |
-|2DPASS-MOS 2F S|69.1%| - |
+|LMNet|2|59.9%|
+|LMNet|9|67.1%|
+|4DMOS|2|69.0%|
+|RVMOS|6|71.2%|
+|Motionseg3D|8|71.4%|
+|InsMOS|10|73.2%|
+|2DPASS-MOS|2|73.5%|
 
-- R: Residual number (Example: Residual 1 models are use 2 Frames)
-- F: Frame number
-- S: Use aditional semantic segmentation
+#### Ablation study
+
+This table shows the effect of different components of our system on the SemanticKITTI validation dataset. </br>
+The models with the scores below can be find by this [link](https://drive.google.com/file/d/1VhlFOA7pM5ue0rWLJ4DXhIEYtkvBT4zK).
+
+|Method|Frames|Downsampling|Voting (TTA)|Semantics|mIoU (validation)|
+|:---:|:---:|:---:|:---:|:---:|:---:|
+|2DPASS-MOS|1|-|-|-|58.5%|
+|2DPASS-MOS|1|-|12|-|65.6%|
+|2DPASS-MOS|2|Every second point|-|-|67.6%|
+|2DPASS-MOS|2|Every second point|-|Instance|69.1%|
+|2DPASS-MOS|2|-|-|-|69.8%|
+|2DPASS-MOS|2|-|-|Instance|70.5%|
+|2DPASS-MOS|2|-|12|-|73.2%|
+|2DPASS-MOS|2|-|12|Instance|73.5%|
 
 ## License
 This repository is released under MIT License (see LICENSE file for details).
