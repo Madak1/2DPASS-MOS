@@ -62,8 +62,9 @@ def parse_config():
     parser.add_argument('--debug', default=False, action='store_true')
 # Update ------------------------------------------------------------------------------------------
     # new args
-    parser.add_argument('--frame_num', type=int, default=1)
-    parser.add_argument('--sparse_odd', action='store_true', default=False)
+    parser.add_argument('--frame_num', type=int, default=1, help='How many frame be merged')
+    parser.add_argument('--step_num', type=int, default=1, help='How much space between two frame')   # todo: frame step experiment
+    parser.add_argument('--sparse', type=str, default='1/1', help='ActSplitNum/SplitSize (e.g. 1/3)') # todo: downsampling experiment
 # -------------------------------------------------------------------------------------------------
 
     args = parser.parse_args()
@@ -224,3 +225,4 @@ if __name__ == '__main__':
                              logger=tb_logger,
                              profiler=profiler)
         trainer.test(my_model, test_dataset_loader if configs.submit_to_server else val_dataset_loader)
+

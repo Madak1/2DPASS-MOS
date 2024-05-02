@@ -10,6 +10,7 @@ from nuscenes.utils import splits
 # Update ------------------------------------------------------------------------------------------
 import torch
 import math
+import re
 # -------------------------------------------------------------------------------------------------
 
 REGISTERED_PC_DATASET_CLASSES = {}
@@ -65,8 +66,8 @@ class SemanticKITTI(data.Dataset):
 
             self.poses = np.array([])
 
+            root_path = config['train_data_loader']['data_path']
             for seq_num in split:
-                root_path = os.path.join("dataset", "SemanticKitti", "dataset", "sequences")
                 seq_str = "{0:02d}".format(int(seq_num))
                 seq_path = os.path.join(root_path, seq_str)
                 act_poses = self.read_poses(seq_path)
@@ -114,6 +115,22 @@ class SemanticKITTI(data.Dataset):
         return calib_out
 
 # Update ------------------------------------------------------------------------------------------
+
+    def to_sparse(self, array):
+        sparse = self.config["sparse"]
+        if (sparse=='1/1'): return array
+        try:
+            assert re.search("[0-9]+/[0-9]+", sparse)
+            act_slice = int(sparse.split("/",1)[0])
+            slice_num = int(sparse.split("/",1)[1])
+            assert slice_num >= act_slice
+            assert slice_num > 0
+            assert act_slice > 0
+        except AssertionError:
+            print("SPARSE-WARNING - Sparse setting is incorrect! -> Use the full PointCloud")
+            return array
+        return array[act_slice-1::slice_num]
+
     # Load ground truth poses from file.
     #  - pose_path: Complete filename for the pose file
     def load_poses(self, pose_path):
@@ -215,15 +232,15 @@ class SemanticKITTI(data.Dataset):
     
     def multiple_frame(self, index):
         frame_num = self.config["frame_num"]
+        step_num = self.config["step_num"]
         all_points = np.array([])
         all_raw_data = np.array([])
 
         for frame_idx in range(frame_num):
-            frame_idx = index-math.floor(frame_num/2)+frame_idx
+            frame_idx = index - (step_num*math.floor(frame_num/2)) + (step_num*frame_idx)
             if frame_idx < 0 or frame_idx >= len(self.poses): continue
             raw_data = np.fromfile(self.im_idx[frame_idx], dtype=np.float32).reshape((-1, 4))
-            if self.config["sparse_odd"]: raw_data = raw_data[::2]
-            else: raw_data = raw_data[1::2]
+            raw_data = self.to_sparse(raw_data)
             all_raw_data = (raw_data if len(all_raw_data) == 0 else np.append(all_raw_data, raw_data, axis=0))
             raw_data = torch.tensor(raw_data)
             points = raw_data[:,:3]
@@ -241,13 +258,12 @@ class SemanticKITTI(data.Dataset):
             all_annotated_data = np.array([])
             all_instance_label = np.array([])
             for label_idx in range(frame_num):
-                label_idx = index-math.floor(frame_num/2)+label_idx
+                label_idx = index - (step_num*math.floor(frame_num/2)) + (step_num*label_idx)
                 if label_idx < 0 or label_idx >= len(self.poses): continue
 
                 annotated_data = np.fromfile(self.im_idx[label_idx].replace('velodyne', 'labels')[:-3] + 'label', 
                                              dtype=np.uint32).reshape((-1, 1))
-                if self.config["sparse_odd"]: annotated_data = annotated_data[::2]
-                else: annotated_data = annotated_data[1::2]
+                annotated_data = self.to_sparse(annotated_data)
                 instance_label = annotated_data >> 16
                 annotated_data = annotated_data & 0xFFFF  # delete high 16 digits binary
                 annotated_data = np.vectorize(self.learning_map.__getitem__)(annotated_data)
@@ -445,3 +461,4 @@ def get_SemKITTI_label_name(label_mapping):
         SemKITTI_label_name[semkittiyaml['learning_map'][i]] = semkittiyaml['labels'][i]
 
     return SemKITTI_label_name
+
