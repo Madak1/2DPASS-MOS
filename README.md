@@ -217,7 +217,7 @@ The models with the scores below can be find by this [link](https://drive.google
 
 |Method|Frames|Downsampling|Voting (TTA)|Semantics|mIoU (validation)|
 |:---:|:---:|:---:|:---:|:---:|:---:|
-|2DPASS-MOS|1|-|-|-|58.5%|
+|2DPASS-MOS|1|-|-|-|58.8%|
 |2DPASS-MOS|1|-|12|-|65.6%|
 |2DPASS-MOS|2|Every second point|-|-|67.6%|
 |2DPASS-MOS|2|Every second point|-|Instance|69.1%|
