@@ -108,7 +108,7 @@ IMPORTANT: Currently, testing is not working well in case of MOS. It doesn't pri
 
 TIPP: Change the split of the dataset in the "./config/label_mapping/semantic-kitti-mos.yaml" file to To specify the sequences you want to save (The test split should contain the target sequences).
 
-TIPP: The test can also be run on a pre-trained model, which can be found in this [link](https://drive.google.com/file/d/1VhlFOA7pM5ue0rWLJ4DXhIEYtkvBT4zK).
+TIPP: The test can also be run on a pre-trained model, which can be found in this [link](https://drive.google.com/file/d/1tMjdOmH_n_-v8veDHHj9d0ScnDbzBzAG).
 
 To test a 2DPASS-MOS network, you can run the test with:
 
@@ -213,7 +213,8 @@ This table compare the result of our proposed method with the competitors on the
 #### Ablation study
 
 This table shows the effect of different components of our system on the SemanticKITTI validation dataset. </br>
-The models with the scores below can be find by this [link](https://drive.google.com/file/d/1VhlFOA7pM5ue0rWLJ4DXhIEYtkvBT4zK).
+The models with the scores below can be find by this [link](https://drive.google.com/file/d/1tMjdOmH_n_-v8veDHHj9d0ScnDbzBzAG).
+
 
 |Method|Frames|Downsampling|Voting (TTA)|Semantics|mIoU (validation)|
 |:---:|:---:|:---:|:---:|:---:|:---:|
