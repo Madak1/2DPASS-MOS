@@ -32,7 +32,7 @@ Predictions (in case of downsampling) must be evaluated for each downsampling mo
 The first step is to select only the points of the current scan, and then merge the downsampled results.
 
 <p align="center">
-   <img src="images/pred-merge.png" width="90%"> 
+   <img src="images/pc-clear.png" width="90%"> 
 </p>
 
 

@@ -66,7 +66,7 @@ class SemanticKITTI(data.Dataset):
 
             self.poses = np.array([])
 
-            root_path = config['train_data_loader']['data_path']
+            root_path = os.path.join("dataset", "SemanticKitti", "dataset", "sequences")
             for seq_num in split:
                 seq_str = "{0:02d}".format(int(seq_num))
                 seq_path = os.path.join(root_path, seq_str)
