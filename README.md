@@ -5,7 +5,7 @@ It operates on 3D LiDAR point clouds, but instead of semantic segmentation, this
 The network takes advantage of the features of 2D images during training, such as dense color information and fine-grained texture, to provide additional information to the LiDAR scans. 
 During inference, the network performs segmentation on the clean LiDAR point clouds, without using the images directly.
 
-Using just one scan already achieves remarkable results, but this method provides the possibility to use multiple (sparse) LiDAR point clouds for both training and inference to extract additional moving information. 
+Using just one scan already achieves remarkable results, but this method provides the possibility to use multiple LiDAR point clouds for both training and inference to extract additional moving information. 
 To create the multi-scan version of the network, the solution provided by the [4DMOS](https://github.com/PRBonn/4DMOS) was a great help during the implementation.
 
 We want to thank the original authors for their clear implementation and great work, which has greatly helped our project.
@@ -20,16 +20,16 @@ We want to thank the original authors for their clear implementation and great w
 In case of one scan, it works the same as 2DPASS, but instead of semantic segmentation, this method performs moving object segmentation.
 However, in the case of multiple scans, several internal structural changes were made.
 
-The network first performs a sparse operation, taking only the odd (or even) points of the point cloud.
-After that, the network transforms the point clouds into a common point based on the current scan, then finally performs a merge.
+The process of merging point clouds from different time begins with the optional downsampling of the point cloud.
+The network then converts the point clouds to a common point based on the current scan, and finally the merging is performed.
 
 <p align="center">
    <img src="images/pc-merge.png" width="90%"> 
 </p>
 
 The output of the network in this form does not match the expectations of the SemanticKITTI Benchmarks, so it requires post-processing to evaluate the results.
-Predictions must be evaluated for both even and odd sparse models, and then the results of these models must be combined.
-The first step is to select only the points of the current scan, and then merge the even and odd results.
+Predictions (in case of downsampling) must be evaluated for each downsampling models, and then the results of these models must be combined.
+The first step is to select only the points of the current scan, and then merge the downsampled results.
 
 <p align="center">
    <img src="images/pred-merge.png" width="90%"> 
@@ -130,7 +130,7 @@ On this repository you can find everything you need to analyse the results nicel
 
 ## Try 2 Frames version
 
-To try it, you need to overwrite 2 more files. The first is main.py which allows you to specify additional arguments. The second file is "./dataloader/pc_dataset.py", which handles the use of multiple frames. Both 2 files can be found in the adaptation folder.
+To try 2 Frames version, you need to overwrite two more files. The first is main.py which allows you to specify additional arguments. The second file is "./dataloader/pc_dataset.py", which handles the use of multiple frames. Both 2 files can be found in the adaptation folder.
 
 ```
 ./
@@ -185,7 +185,7 @@ Then just run the script, and the genereted dataset will be in the output folder
 ```shell script
 python gen_2frame_val_dataset.py
 ```
-With the created dataset, you can run the test with 12 TTA
+With the created dataset, you can run the test with multiple TTA
 
 ```shell script
 python main.py --config config/2DPASS-semantickitti-mos.yaml --gpu 0 --test --submit_to_server --num_vote 12 --checkpoint <checkpoint path>
@@ -194,7 +194,8 @@ To evaluat, need to clear the predictions. This repo contains an example for tha
 
 ## Results
 
-The predictions of our method can be find in the "results" folder.
+The predictions of our method can be find in the "results" folder. <br/>
+Our models with the scores below can be find by this [link](https://drive.google.com/file/d/1tMjdOmH_n_-v8veDHHj9d0ScnDbzBzAG).
 
 #### Comparison
 
@@ -213,8 +214,6 @@ This table compare the result of our proposed method with the competitors on the
 #### Ablation study
 
 This table shows the effect of different components of our system on the SemanticKITTI validation dataset. </br>
-The models with the scores below can be find by this [link](https://drive.google.com/file/d/1tMjdOmH_n_-v8veDHHj9d0ScnDbzBzAG).
-
 
 |Method|Frames|Downsampling|Voting (TTA)|Semantics|mIoU (validation)|
 |:---:|:---:|:---:|:---:|:---:|:---:|
